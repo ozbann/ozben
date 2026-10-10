@@ -790,7 +790,7 @@ const LEGACY_PLANS={
 // Tek program: her idman gününde aynı tüm vücut antrenmanı (salonda)
 // Kilo alma programı: İtiş / Çekiş / Bacak, her bölgeden 2 hareket, haftada 3 gün dönüşümlü
 const PDAYS={
-  A:{name:"İtiş",sub:"Göğüs · Omuz · Arka kol",ex:[["bench","Bench Press",4,"6-8","kg"],["incdb","Incline Dumbbell Press",3,"8-10","kg"],["seatdb","Oturarak Dumbbell Shoulder Press",3,"8-10","kg"],["lateral","Lateral Raise",3,"12-15","kg"],["pushdown","Triceps Pushdown",3,"10-12","kg"],["cgbench","Close-Grip Bench Press",3,"8-10","kg"]]},
+  A:{name:"İtiş",sub:"Göğüs · Omuz · Arka kol",ex:[["bench","Bench Press",4,"6-8","kg"],["incdb","Incline Dumbbell Press",3,"8-10","kg"],["seatdb","Oturarak Dumbbell Shoulder Press",3,"8-10","kg"],["lateral","Lateral Raise",3,"12-15","kg"],["pushdown","Triceps Pushdown",3,"10-12","kg"]]},
   B:{name:"Çekiş",sub:"Sırt · Ön kol · Karın",ex:[["pulldown","Lat Pulldown",4,"6-10","kg"],["cablerow","Seated Cable Row",3,"8-12","kg"],["curl","Barbell Curl",3,"8-12","kg"],["hammer","Hammer Curl",3,"10-12","kg"],["legraise","Lying Leg Raise",3,"10-15","vücut"]]},
   F:{name:"Full body",sub:"Dönüş haftaları · her bölgeden 1 hareket",ex:[["legpress","Leg Press",3,"10-12","kg"],["legcurl","Lying Leg Curl",2,"10-12","kg"],["bench","Bench Press",3,"8-10","kg"],["pulldown","Lat Pulldown",3,"8-10","kg"],["lateral","Lateral Raise",2,"12-15","kg"],["curl","Barbell Curl",2,"10-12","kg"],["pushdown","Triceps Pushdown",2,"10-12","kg"]]},
   C:{name:"Bacak",sub:"Ön bacak · Arka bacak · Baldır",ex:[["legpress","Leg Press",4,"8-10","kg"],["legext","Leg Extension",3,"10-15","kg"],["legcurl","Lying Leg Curl",4,"8-12","kg"],["calf","Ayakta Calf Raise",3,"12-15","kg"]]}
@@ -2216,7 +2216,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&sheetOpen)closeShee
 })();
 
 /* yeni sürüm kontrolü (bağımsız sürüm) */
-const APP_V="2026.10.10-2017";
+const APP_V="2026.10.10-2020";
 async function checkUpdate(manual){if(inViewer()||APP_V.startsWith("__"))return;
   try{const r=await fetch(location.pathname+"?check="+Date.now(),{cache:"no-store"});const t=await r.text();const m=t.match(/const APP_V="([^"]+)"/);
     if(m&&m[1]!==APP_V){const el=$("#upd");el.innerHTML=`<span class="grow">Yeni sürüm hazır</span><button class="btn sm" id="btn-upd">Güncelle</button>`;el.hidden=false;el.dataset.v=m[1]}
