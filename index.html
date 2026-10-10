@@ -1015,14 +1015,28 @@ function medFormSummary(){const el=$("#m2-sum");if(!el)return;const st=$("#m2-st
   el.textContent=st?fmtDY(st)+" başlangıç · sürekli kullanım, bitiş yok.":"Sürekli kullanım, bitiş yok.";}
 
 function lastSets(key){const ws=allWorkouts();for(let i=ws.length-1;i>=0;i--){const e=(ws[i].ex||[]).find(x=>x.k===key);if(e&&e.sets.some(s=>s.done))return {date:ws[i].date,sets:e.sets.filter(s=>s.done)}}return null}
+const EQUIP={dbbench:"db",incdb:"db",seatdb:"db",dbrow1:"db",hammer:"db",lateral:"dbs",
+  pulldown:"mc",cablerow:"mc",pushdown:"mc",legext:"mc",seatcurl:"mc",legcurl:"mc",calf:"mc",revpec:"mcs",
+  legpress:"plate",curl:"bar",bench:"bar",backext:"bw"};
+function equipOf(k){return EQUIP[k]||"bar"}
+function wLabel(k,unit){if(unit!=="kg")return unit==="sn"?"—":"ek kg";const e=equipOf(k);return e==="db"||e==="dbs"?"kg/dambıl":"kg"}
 function suggestion(ex,last){
-  if(!last) return {up:false,text:"İlk kez: rahat yaptığın bir ağırlıkla başla, 1–2 tekrar yedekte kalsın."};
-  const top=+ex[3].split("-")[1];
-  const allTop=last.sets.length>=ex[2]&&last.sets.every(s=>+s.r>=top);
-  const lastW=Math.max(...last.sets.map(s=>+s.w||0));
+  if(!last) return {up:false,text:equipOf(ex[0])==="db"||equipOf(ex[0])==="dbs"?"İlk kez: rahat yaptığın bir dambılla başla, 1–2 tekrar yedekte kalsın. Ağırlığı tek dambıl olarak gir.":"İlk kez: rahat yaptığın bir ağırlıkla başla, 1–2 tekrar yedekte kalsın."};
+  const top=+ex[3].split("-")[1];const n=last.sets.length>=ex[2];
+  const allTop=n&&last.sets.every(s=>+s.r>=top);
+  const lastW=Math.max(...last.sets.map(s=>+s.w||0));const eq=equipOf(ex[0]);
+  if(ex[4]==="sn")return allTop?{up:true,text:"Tüm setler "+top+" sn. Bugün 5–10 sn ekle."}:{up:false,text:"Süreyi biraz artırmaya çalış."};
+  if(eq==="dbs"||eq==="mcs"){const far=n&&last.sets.every(s=>+s.r>=top+5);
+    if(far&&lastW>0)return {up:true,next:eq==="dbs"?r1(lastW+2):null,text:"Tüm setlerde "+(top+5)+"+ tekrar yaptın. Bugün "+(eq==="dbs"?"bir sonraki dambıla geç (+1–2 kg → ~"+r1(lastW+2)+" kg)":"bir kademe artır")+"; tekrar sayısı "+ex[3].split("-")[0]+" civarına düşebilir, normal."};
+    if(allTop)return {up:true,text:"Tüm setler "+top+" tekrar. Küçük kas: ağırlığı artırma, aynı ağırlıkla "+(top+5)+" tekrara kadar çık; oraya ulaşınca ağırlık artır."};
+    return {up:false,text:"Aynı ağırlıkta kal, temiz formla tekrarları artır."}}
   if(allTop){
-    if(ex[4]==="kg"&&lastW>0) return {up:true,text:"Geçen sefer tüm setler "+top+" tekrar. Bugün +2.5 kg dene ("+r1(lastW+2.5)+" kg)."};
-    if(ex[4]==="sn") return {up:true,text:"Tüm setler "+top+" sn. Bugün 5–10 sn ekle."};
+    if(ex[4]==="kg"&&lastW>0){
+      if(eq==="db")return {up:true,next:r1(lastW+2),text:"Geçen sefer tüm setler "+top+" tekrar. Bugün bir sonraki dambıla geç (+2 kg → "+r1(lastW+2)+" kg). Tekrar sayısı düşerse normal."};
+      if(eq==="mc")return {up:true,next:r1(lastW+5),text:"Geçen sefer tüm setler "+top+" tekrar. Bugün bir kademe artır (çoğu makinede +5 kg → "+r1(lastW+5)+" kg)."};
+      if(eq==="plate")return {up:true,next:r1(lastW+10),text:"Geçen sefer tüm setler "+top+" tekrar. Bugün her tarafa 5 kg ekle (+10 kg → "+r1(lastW+10)+" kg)."};
+      return {up:true,next:r1(lastW+2.5),text:"Geçen sefer tüm setler "+top+" tekrar. Bugün +2.5 kg dene ("+r1(lastW+2.5)+" kg)."}}
+    if(eq==="bw")return {up:true,text:lastW>0?"Tüm setler "+top+" tekrar. Tuttuğun plakayı 2.5–5 kg artır.":"Tüm setler "+top+" tekrar. Göğsüne 5 kg'lık bir plaka alarak dene; ağırlığı \"ek kg\"ye yaz."};
     return {up:true,text:"Üst sınıra ulaştın. Daha zor varyasyon ya da +2 tekrar dene."};
   }
   return {up:false,text:"Aynı ağırlıkta kal, tekrarları artırmaya çalış."};
@@ -1207,7 +1221,7 @@ function startWorkout(plan){
   active={id:uid(),plan,place:p.place,start:Date.now(),ex:list.map(e=>{const last=lastSets(e[0]);const n=e[2];
     return {k:e[0],name:e[1],unit:e[4],sets:Array.from({length:n},(_,i)=>({w:last&&last.sets[i]?last.sets[i].w:(last?last.sets[last.sets.length-1].w:""),r:"",done:false}))}})};
   const sug=list.map(e=>suggestion(e,lastSets(e[0])));
-  active.ex.forEach((x,i)=>{if(sug[i].up&&x.unit==="kg"){const lw=Math.max(...(lastSets(x.k)?.sets||[]).map(s=>+s.w||0));if(lw>0)x.sets.forEach(s=>s.w=r1(lw+2.5))}});
+  active.ex.forEach((x,i)=>{if(sug[i].up&&x.unit==="kg"){const lw=Math.max(...(lastSets(x.k)?.sets||[]).map(s=>+s.w||0));if(lw>0&&sug[i].next)x.sets.forEach(s=>s.w=sug[i].next)}});
   saveActive();render();
 }
 let watchAsk=null, gTestMsg=null;
@@ -1347,7 +1361,7 @@ function vWork(){
       <div class="bar light"><span style="width:${total?done/total*100:0}%"></span></div>
     </div>
     ${active.ex.map((e,ei)=>{const def=plan.find(x=>x[0]===e.k)||[e.k,e.name,3,"8-10",e.unit];const last=lastSets(e.k);const sg=suggestion(def,last);
-      const wl=e.unit==="kg"?"kg":e.unit==="sn"?"—":"ek kg";const rl=e.unit==="sn"?"saniye":"tekrar";
+      const wl=wLabel(e.k,e.unit);const rl=e.unit==="sn"?"saniye":"tekrar";
       const exDone=e.sets.length&&e.sets.every(s=>s.done);
       return `<div class="card ex ${exDone?"exdone":""}">
       <div class="ex-h"><span class="idx ${exDone?"on":""}">${exDone?"✓":ei+1}</span><div class="grow"><b>${esc(e.name)}</b><div class="small muted">${last?"Geçen "+fmtD(last.date)+": <span class=\"num\">"+last.sets.map(s=>(s.w?s.w+"×":"")+s.r).join("  ")+"</span>":"İlk kez"}</div></div><span class="tag num">${def[2]}×${def[3]}${e.unit==="sn"?" sn":""}</span></div>
@@ -1402,7 +1416,7 @@ function vWork(){
     ${hd("list",PDAYS[workPick].name+(workPick==="F"?"":" günü"),"b-red",`<span class="small muted">${workPick==="F"?"~50 dk":PDAYS[workPick].sub}</span>`)}
     <div class="exlist">${list.map((e,i)=>`<div class="exi"><div class="exi-t"><span class="idx">${i+1}</span><span class="grow">${esc(e[1])}</span><span class="tag num">${e[2]}×${e[3]}${e[4]==="sn"?" sn":""}</span></div>${exGif(e[0])}</div>`).join("")}</div>
     <button class="btn primary" data-start="${workPick}">${workPick==="F"?"Full body idmanı başlat":PDAYS[workPick].name+" gününü başlat"}</button>
-    ${rI?`<button class="link muted" data-retend="1" style="align-self:flex-start">Kendimi hazır hissediyorum, ana programa şimdi geç</button>`:`<div class="small muted">Sıra İtiş → Çekiş → Bacak; bitirdiğin günün ardından sıradaki otomatik seçilir (• işareti). Her sette 1–2 tekrar yedekte bırak; tüm setlerde üst tekrara ulaşınca uygulama ağırlık artırmanı önerir.</div>`}
+    ${rI?`<button class="link muted" data-retend="1" style="align-self:flex-start">Kendimi hazır hissediyorum, ana programa şimdi geç</button>`:`<div class="small muted">Sıra İtiş → Çekiş → Bacak; bitirdiğin günün ardından sıradaki otomatik seçilir (• işareti). Her sette 1–2 tekrar yedekte bırak; tüm setlerde üst tekrara ulaşınca uygulama ağırlık artırmanı önerir (dambılda +2 kg, makinede bir kademe; küçük kaslarda önce tekrar). Pres hareketlerinde setler arası 2–3 dk dinlen.</div>`}
   </div>
   <div class="card soft-red">
     ${hd("shield","Başlamadan önce","b-red")}
@@ -2216,7 +2230,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&sheetOpen)closeShee
 })();
 
 /* yeni sürüm kontrolü (bağımsız sürüm) */
-const APP_V="2026.10.10-2043";
+const APP_V="2026.10.10-2050";
 async function checkUpdate(manual){if(inViewer()||APP_V.startsWith("__"))return;
   try{const r=await fetch(location.pathname+"?check="+Date.now(),{cache:"no-store"});const t=await r.text();const m=t.match(/const APP_V="([^"]+)"/);
     if(m&&m[1]!==APP_V){const el=$("#upd");el.innerHTML=`<span class="grow">Yeni sürüm hazır</span><button class="btn sm" id="btn-upd">Güncelle</button>`;el.hidden=false;el.dataset.v=m[1]}
